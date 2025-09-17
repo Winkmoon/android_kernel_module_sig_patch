@@ -81,19 +81,18 @@ index 3e4f5a6b..7c8d9e0f 100644
 
  /*
   * Load a module: parse the elf file, check sections, etc.
-@@ -1295,6 +1327,17 @@ static int load_module(struct load_info *info, const char __user *uargs, int flag
+@@ -1295,8 +1327,15 @@ static int load_module(struct load_info *info, const char __user *uargs, int flag
  	err = module_sig_check(info, flags);
- 	if (err)
- 		goto free_copy;
-+
 +#ifdef CONFIG_MODULE_SIG_ALL
 +	if (err) {
 +		printk(KERN_ERR "开挂死全家，说的就是你\n");
 +		print_to_terminal("ERROR: 开挂死全家，说的就是你\n");
-+		return err;
++		goto free_copy;
 +	}
++#else
+ 	if (err)
+ 		goto free_copy;
 +#endif /* CONFIG_MODULE_SIG_ALL */
-+
 
  	/* Figure out module layout, and allocate all the memory. */
  	err = layout_and_allocate(info, flags);
