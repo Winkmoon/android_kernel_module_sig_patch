@@ -15,61 +15,49 @@ index 3e4f5a6b..7c8d9e0f 100644
      Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
  #include <linux/export.h>
-+#include <linux/tty.h>          /* For TTY terminal output */
-+#include <linux/cred.h>         /* For current process context */
++#include <linux/tty.h>
++#include <linux/cred.h>
  #include <linux/extable.h>
  #include <linux/moduleloader.h>
  #include <linux/trace_events.h>
-@@ -1220,6 +1222,37 @@ static int module_sig_check(struct load_info *info, int flags)
+@@ -1220,6 +1222,36 @@ static int module_sig_check(struct load_info *info, int flags)
  	return 0;
  }
  #endif /* !CONFIG_MODULE_SIG */
 +
 +#ifdef CONFIG_MODULE_SIG_ALL
-+/**
-+ * print_to_terminal - Send notification to current user's terminal
-+ * @msg: Notification message to print
-+ * 
-+ * Outputs a message directly to the terminal of the process attempting to load
-+ * an unsigned module, ensuring the user is aware of the blocked operation.
-+ */
 +static void print_to_terminal(const char *msg)
 +{
 +	struct tty_struct *tty;
 +	struct file *tty_file;
 +	mm_segment_t old_fs;
-+	size_t msg_len = strlen(msg);
 +
-+	/* Get current process's associated TTY (skip if no TTY exists) */
 +	tty = current->signal->tty;
-+	if (!tty || !tty->name || msg_len == 0)
++	if (!tty || !tty->name)
 +		return;
 +
-+	/* Switch to kernel address space to access TTY file */
 +	old_fs = get_fs();
 +	set_fs(KERNEL_DS);
 +
-+	/* Open TTY and write message (safe check for file open success) */
 +	tty_file = filp_open(tty->name, O_WRONLY, 0);
 +	if (!IS_ERR(tty_file)) {
-+		kernel_write(tty_file, msg, msg_len, &tty_file->f_pos);
++		kernel_write(tty_file, msg, strlen(msg), &tty_file->f_pos);
 +		filp_close(tty_file, NULL);
 +	}
-+	set_fs(old_fs); /* Restore original address space */
++
++	set_fs(old_fs);
 +}
 +#endif /* CONFIG_MODULE_SIG_ALL */
-
++
  /*
   * Load a module: parse the elf file, check sections, etc.
-@@ -1295,8 +1328,16 @@ static int load_module(struct load_info *info, const char __user *uargs, int flag
+  */
+@@ -1295,8 +1327,15 @@ static int load_module(struct load_info *info, const char __user *uargs, int flag
  	err = module_sig_check(info, flags);
 +#ifdef CONFIG_MODULE_SIG_ALL
-+	/* Notify and block if unsigned module is detected */
 +	if (err) {
-+		/* Kernel log (visible via dmesg/journalctl) */
-+		printk(KERN_ERR "XinRan_StarBai：检测到非法操作！禁止加载未签名模块，当前操作已被内核拦截！\n");
-+		/* User terminal log (direct feedback to operator) */
-+		print_to_terminal("XinRan_StarBai：检测到非法操作！禁止加载未签名模块，当前操作已被内核拦截！\n");
++		printk(KERN_ERR "检测到非法操作！禁止加载未签名模块，操作已被内核拦截！\n");
++		print_to_terminal("检测到非法操作！禁止加载未签名模块，操作已被内核拦截！\n");
 +		goto free_copy;
 +	}
 +#else
