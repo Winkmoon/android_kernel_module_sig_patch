@@ -12,4 +12,5 @@ module_sig.patch为自动开启签名相关属性，module_sig_nonKconfig.patch�
 
 例子
 CONFIG_MODULE_SIG=y
+
 CONFIG_MODULE_SIG_ALL=y
