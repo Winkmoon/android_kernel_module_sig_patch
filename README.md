@@ -8,6 +8,7 @@
 提示信息也会被记录到内核日志中
 
 **提示**
+module_sig_nabu.patch为小米pad系列专用（pad5已测试），小米源码源码结构不同，打入后需手动在defconfig中开启CONFIG_MODULE_SIG相关选项
 module_sig.patch为自动开启签名相关属性，module_sig_nonKconfig.patch相反，其余功能保持不变，如第一个报错请打第二个，并手动在defconfig中开启CONFIG_MODULE_SIG相关选项
 
 例子
