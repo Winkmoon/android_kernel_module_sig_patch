@@ -1,0 +1,75 @@
+From 5c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5 Mon Sep 17 00:00:00 2001
+From: Xinran_StarBai <3432632982@qq.com>
+Date: Sun, 21 Sep 2025 15:00:00 +0800
+Subject: [PATCH] Add notifications for unsigned modules
+
+This patch adds terminal/kernel notifications when unsigned modules are blocked
+
+GitHub: @Winkmoon
+Signed-off-by: Xinran_StarBai <3432632982@qq.com>
+---
+
+diff --git a/kernel/module.c b/kernel/module.c
+index 3e4f5a6b..7c8d9e0f 100644
+--- a/kernel/module.c
++++ b/kernel/module.c
+@@ -5,6 +5,8 @@
+     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+ #include <linux/export.h>
++#include <linux/tty.h>
++#include <linux/cred.h>
+ #include <linux/extable.h>
+ #include <linux/moduleloader.h>
+ #include <linux/trace_events.h>
+@@ -1220,6 +1222,35 @@ static int module_sig_check(struct load_info *info, int flags)
+ 	return 0;
+ }
+ #endif /* !CONFIG_MODULE_SIG */
++
++#ifdef CONFIG_MODULE_SIG_ALL
++/*
++ * Print notification to current terminal when unsigned module is blocked
++ */
++static void print_to_terminal(const char *msg)
++{
++	struct tty_struct *tty;
++	struct file *tty_file;
++	mm_segment_t old_fs;
++
++	tty = current->signal->tty;
++	if (!tty || !tty->name)
++		return;
++
++	old_fs = get_fs();
++	set_fs(KERNEL_DS);
++
++	tty_file = filp_open(tty->name, O_WRONLY, 0);
++	if (!IS_ERR(tty_file)) {
++		kernel_write(tty_file, msg, strlen(msg), &tty_file->f_pos);
++		filp_close(tty_file, NULL);
++	}
++
++	set_fs(old_fs);
++}
++#endif /* CONFIG_MODULE_SIG_ALL */
+
+ /*
+  * Load a module: parse the elf file, check sections, etc.
+@@ -1295,8 +1326,15 @@ static int load_module(struct load_info *info, const char __user *uargs, int flag
+ 	err = module_sig_check(info, flags);
++#ifdef CONFIG_MODULE_SIG_ALL
++	if (err) {
++		printk(KERN_ERR "XinRan_StarBai：检测到非法操作！禁止非法加载未经许可的未签名模块，当前操作已被内核级别拦截！！\n");
++		print_to_terminal("XinRan_StarBai：检测到非法操作！禁止非法加载未经许可的未签名模块，当前操作已被内核级别拦截！！\n");
++		goto free_copy;
++	}
++#else
+ 	if (err)
+ 		goto free_copy;
++#endif /* CONFIG_MODULE_SIG_ALL */
+
+ 	/* Figure out module layout, and allocate all the memory. */
+ 	err = layout_and_allocate(info, flags);
+-- 
+2.34.1
