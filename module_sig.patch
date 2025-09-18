@@ -85,8 +85,8 @@ index 3e4f5a6b..7c8d9e0f 100644
  	err = module_sig_check(info, flags);
 +#ifdef CONFIG_MODULE_SIG_ALL
 +	if (err) {
-+		printk(KERN_ERR "开挂死全家，说的就是你\n");
-+		print_to_terminal("ERROR: 开挂死全家，说的就是你\n");
++		printk(KERN_ERR "XinRan_StarBai：检测到非法操作！禁止非法加载未经许可的未签名模块，当前操作已被内核级别拦截！！\n");
++		print_to_terminal("XinRan_StarBai：检测到非法操作！禁止非法加载未经许可的未签名模块，当前操作已被内核级别拦截！！\n");
 +		goto free_copy;
 +	}
 +#else
@@ -98,3 +98,4 @@ index 3e4f5a6b..7c8d9e0f 100644
  	err = layout_and_allocate(info, flags);
 -- 
 2.34.1
+
